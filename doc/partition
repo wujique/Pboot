@@ -1,0 +1,6 @@
+[partition:ver20201113]
+{
+boot:prog,0x08000000,0x10000;
+partition:data,0x90000000,0x1000;
+app:prog,0x90001000,0x200000;
+}
