@@ -1,8 +1,8 @@
 #ifndef __BOARD_H__
 #define __BOARD_H__
 
-#define  PC_PORT MCU_UART_4
-#define  DEBUG_PORT	MCU_UART_2
+#define  PC_PORT "uart4"
+#define  DEBUG_PORT	"uart2"
 
 /* alloc.c管理的内存*/
 #define AllocArraySize (120*1024)

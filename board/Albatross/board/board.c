@@ -4,6 +4,7 @@
 */
 #include "mcu.h"
 #include "board.h"
+#include "bus_uart.h"
 #include "log.h"
 
 const char *BoardPartitionDef="[partition:ver20201029]\r\n\
@@ -80,12 +81,10 @@ void board_init(void)
 	int res;
 	
 	/* 串口是输出LOG，最先初始化 */
-	mcu_uart_init();
-	mcu_uart_open(DEBUG_PORT);
+	bus_uart_init();
+	log_init();
 	wjq_log(LOG_INFO, "------Albatross(h750vb)------\r\n");
 
-	mcu_uart_open(PC_PORT);
-	
 	MX_GPIO_Init();
 	MX_QUADSPI_Init();
 

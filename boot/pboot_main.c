@@ -2,21 +2,34 @@
 #include "mcu.h"
 #include "board.h"
 #include "log.h"
-
+#include "bus_uart.h"
 #include "ymodem.h"
-
-uint8_t data[256];
-uint8_t recbuf[256];
-uint8_t checkbuf[256];
 
 YmodemStr YmodemDocker;
 
+const static BusUartPra DLPortPra={
+	.BaudRate = 115200,
+	.bufsize = 4096,
+	};
+	
+BusUartNode *DLUartNode;
+
+
+int pboot_download_init(void)
+{
+	DLUartNode = bus_uart_open(PC_PORT, &DLPortPra);
+	if(DLUartNode == NULL){
+		return -1;
+	}
+
+	return 0;
+}
 
 int pboot_download_getdata(char *buf, int len)
 {
 	int rlen;
 	
-	rlen = mcu_uart_read(PC_PORT, buf, len);
+	rlen = bus_uart_read(DLUartNode, buf, len);
 
 	return rlen;
 }
@@ -25,7 +38,7 @@ int pboot_download_putdata(char *buf, int len)
 {
 	int rlen;
 	
-	rlen = mcu_uart_write(PC_PORT, buf, len);
+	rlen = bus_uart_write(DLUartNode, buf, len);
 
 	return rlen;
 }
@@ -124,6 +137,9 @@ void pboot_main(void)
 		Uprintf(" firmware check err!\r\n");	
 		time_out = 0xffffffff;
 	}
+	
+	pboot_download_init();
+
 	/* 进入pboot_download流程 */
 	res = pboot_download(time_out);
 	

@@ -22,15 +22,45 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "mcu.h"
+#include "bus_uart.h"
 #include "log.h"
 
 LOG_L LogLevel = LOG_DEBUG;//系统调试信息等级
+
+const static BusUartPra PcPortPra={
+	.BaudRate = 115200,
+	.bufsize = 256,
+	};
+	
+BusUartNode *LogUartNode;
+
 /*
 使用串口输出调试信息
 */
 s8 string[256];//调试信息缓冲，输出调试信息一次不可以大于256
 
+#if 0
+#ifdef __GNUC__
+/* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
+     set to 'Yes') calls __io_putchar() */
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
 
+PUTCHAR_PROTOTYPE
+{
+    /* Place your implementation of fputc here */
+    /* e.g. write a character to the USART */
+    USART_SendData(USART3, (uint8_t) ch);
+
+    /* Loop until the end of transmission */
+    while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
+    return ch;
+}
+
+#endif 
 extern int vsprintf(char * s, const char * format, __va_list arg);
 /**
  *@brief:      uart_printf
@@ -56,7 +86,7 @@ void uart_printf(s8 *fmt,...)
         pt++;
     }
     
-    mcu_uart_write(DEBUG_PORT, (u8*)&string[0], length);  //写串口
+    mcu_uart_send(LogUartNode->comport, (u8*)&string[0], length);  //写串口
     
     va_end(ap);
 }
@@ -80,7 +110,7 @@ void wjq_log(LOG_L l, s8 *fmt,...)
         pt++;
     }
     
-    mcu_uart_write(DEBUG_PORT, (u8*)&string[0], length);  //写串口
+    mcu_uart_send(LogUartNode->comport, (u8*)&string[0], length);  //写串口
     
     va_end(ap);
 }
@@ -105,6 +135,19 @@ void PrintFormat(u8 *wbuf, s32 wlen)
     }
     uart_printf("\r\n");
 }
+void PrintFormatU16(u16 *wbuf, s32 wlen)
+{   
+    s32 i;
+    for(i=0; i<wlen; i++)
+    {
+        if((0 == (i&0x0f)))//&&(0 != i))
+        {
+            uart_printf("\r\n");
+        }
+        uart_printf("%04x ", wbuf[i]);
+    }
+    uart_printf("\r\n");
+}
 
 void cmd_uart_printf(s8 *fmt,...)
 {
@@ -122,8 +165,13 @@ void cmd_uart_printf(s8 *fmt,...)
         pt++;
     }
     
-    mcu_uart_write(DEBUG_PORT, (u8*)&string[0], length);  //写串口
+    mcu_uart_send(LogUartNode->comport, (u8*)&string[0], length);  //写串口
     
     va_end(ap);
+}
+
+void log_init(void)
+{
+	LogUartNode = bus_uart_open(DEBUG_PORT, &PcPortPra);
 }
 
